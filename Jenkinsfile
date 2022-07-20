@@ -1,47 +1,46 @@
 pipeline {
     agent any
-    tools {
-        maven 'Maven363'
-    }
-    options {
-        timeout(10)
-        buildDiscarder logRotator(artifactDaysToKeepStr: '', artifactNumToKeepStr: '', daysToKeepStr: '5', numToKeepStr: '5')
-    }
-    stages {
-        stage('Build') {
+
+    
+        stages {
+            stage ('check out') 
+            {
             steps {
-                sh "mvn clean install"
+                checkout([$class: 'GitSCM', branches: [[name: '*/main']], extensions: [], userRemoteConfigs: [[credentialsId: 'git-id', url: 'https://github.com/rajuth/maven-jenkin.git']]])
             }
         }
-        stage('upload artifact to nexus') {
+            stage ('build war') {
             steps {
-                nexusArtifactUploader artifacts: [
+                sh 'mvn clean install'
+            }
+        }
+        stage ('move war to neuxs') {
+            steps {
+                nexusArtifactUploader artifacts: 
+                [
                     [
                         artifactId: 'wwp', 
                         classifier: '', 
-                        file: 'target/wwp-1.0.0.war', 
+                        file: 'target/wwp-1.0.0-SNAPSHOT.war', 
                         type: 'war'
                     ]
                 ], 
-                    credentialsId: 'nexus3', 
-                    groupId: 'koddas.web.war', 
-                    nexusUrl: '10.0.0.91:8081', 
-                    nexusVersion: 'nexus3', 
-                    protocol: 'http', 
-                    repository: 'samplerepo', 
-                    version: '1.0.0'
+                        credentialsId: 'nuxes-admin', 
+                        groupId: 'web.war', 
+                        nexusUrl: '192.168.56.113:8081', 
+                        nexusVersion: 'nexus3', 
+                        protocol: 'http', 
+                        repository: 'node-app', 
+                        version: '1.0.0-SNAPSHOT'
+
+                
             }
         }
+        
+ 
     }
-    post {
-        always{
-            deleteDir()
-        }
-        failure {
-            echo "sendmail -s mvn build failed receipients@my.com"
-        }
-        success {
-            echo "The job is successful"
+    
+}
         }
     }
 }

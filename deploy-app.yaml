@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name:  tomcat-app-deploy
+  namespace: default
+  labels:
+    app:  app
+spec:
+  selector:
+    matchLabels:
+      app: app
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app:  app
+    spec:
+      containers:
+      - name:  app
+        image: 192.168.56.112:5000/tomcat:26
+        resources:
+          requests:
+            cpu: 100m
+            memory: 100Mi
+          limits:
+            cpu: 100m
+            memory: 100Mi
+        ports:
+        - containerPort:  80
+          name:  app
+      restartPolicy: Always
+      imagePullSecrets:
+       - name: regcred
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: tomcat-app-service
+  namespace: default
+spec:
+  type: NodePort
+  selector:
+    app: app
+  ports:
+  - name: app
+    protocol: TCP
+    port: 8181
+    targetPort: 80
+    # If you set the `spec.type` field to `NodePort` and you want a specific port number,
+    # you can specify a value in the `spec.ports[*].nodePort` field.
+    nodePort: 30000
